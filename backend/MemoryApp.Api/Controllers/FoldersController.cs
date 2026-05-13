@@ -206,4 +206,62 @@ public class FoldersController : ControllerBase
             message = "Папка удалена"
         });
     }
+
+    [HttpGet("home/{userId}")]
+    public async Task<IActionResult> GetHomeFolders(int userId)
+    {
+        var ownFolders = await _context.Folders
+            .Where(f => f.OwnerId == userId)
+            .OrderByDescending(f => f.IsPinned)
+            .ThenByDescending(f => f.UpdatedAt)
+            .Select(f => new
+            {
+                f.Id,
+                f.Name,
+                f.IsPinned,
+                f.ParentFolderId,
+                f.CreatedAt,
+                f.UpdatedAt,
+
+                PreviewPhotos = _context.PhotoFolders
+                    .Where(pf => pf.FolderId == f.Id)
+                    .Include(pf => pf.Photo)
+                    .OrderByDescending(pf => pf.Photo.UploadedAt)
+                    .Take(4)
+                    .Select(pf => pf.Photo.ThumbnailUrl)
+                    .ToList()
+            })
+            .ToListAsync();
+
+        var sharedFolders = await _context.FolderAccesses
+            .Where(a => a.UserId == userId)
+            .Include(a => a.Folder)
+            .OrderByDescending(a => a.Folder.UpdatedAt)
+            .Select(a => new
+            {
+                a.Folder.Id,
+                a.Folder.Name,
+                a.Folder.IsPinned,
+                a.Folder.ParentFolderId,
+                a.Folder.CreatedAt,
+                a.Folder.UpdatedAt,
+
+                AccessType = a.AccessType,
+
+                PreviewPhotos = _context.PhotoFolders
+                    .Where(pf => pf.FolderId == a.Folder.Id)
+                    .Include(pf => pf.Photo)
+                    .OrderByDescending(pf => pf.Photo.UploadedAt)
+                    .Take(4)
+                    .Select(pf => pf.Photo.ThumbnailUrl)
+                    .ToList()
+            })
+            .ToListAsync();
+
+        return Ok(new
+        {
+            OwnFolders = ownFolders,
+            SharedFolders = sharedFolders
+        });
+}
 }
