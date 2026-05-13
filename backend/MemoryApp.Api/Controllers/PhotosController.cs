@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using MemoryApp.Api.Data;
 using MemoryApp.Api.Models;
 using MemoryApp.Api.Dtos;
+using MemoryApp.Api.Services;
 
 namespace MemoryApp.Api.Controllers;
 
@@ -12,11 +13,16 @@ public class PhotosController : ControllerBase
 {
     private readonly AppDbContext _context;
     private readonly IWebHostEnvironment _environment;
+    private readonly AccessService _accessService;
 
-    public PhotosController(AppDbContext context, IWebHostEnvironment environment)
+    public PhotosController(
+        AppDbContext context,
+        IWebHostEnvironment environment,
+        AccessService accessService)
     {
         _context = context;
         _environment = environment;
+        _accessService = accessService;
     }
 
     [HttpPost("upload")]
@@ -47,6 +53,18 @@ public class PhotosController : ControllerBase
         if (folders.Count != dto.FolderIds.Count)
         {
             return BadRequest("Одна или несколько папок не найдены.");
+        }
+        foreach (var folderId in dto.FolderIds)
+        {
+            var canEdit = await _accessService.CanEditFolder(
+                dto.OwnerId,
+                folderId);
+
+            if (!canEdit)
+            {
+                return StatusCode(403,
+                    $"Нет доступа к папке {folderId}");
+            }
         }
 
         var uploadsPath = Path.Combine(_environment.WebRootPath, "uploads");
@@ -104,8 +122,18 @@ public class PhotosController : ControllerBase
 
 
     [HttpGet("folder/{folderId}")]
-    public async Task<IActionResult> GetPhotosByFolder(int folderId)
+    public async Task<IActionResult> GetPhotosByFolder(
+        int folderId,
+        [FromQuery] int userId)
     {
+        var canView = await _accessService
+            .CanViewFolder(userId, folderId);
+
+        if (!canView)
+        {
+            return StatusCode(403,
+                "Нет доступа к папке.");
+        }
         var photos = await _context.PhotoFolders
             .Where(pf => pf.FolderId == folderId)
             .Include(pf => pf.Photo)

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using MemoryApp.Api.Data;
+using MemoryApp.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +14,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         builder.Configuration.GetConnectionString("DefaultConnection")
     ));
 
+builder.Services.AddScoped<AccessService>();
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

@@ -102,6 +102,69 @@ public class FoldersController : ControllerBase
         return Ok(folder);
     }
 
+    [HttpGet("content/{folderId}")]
+    public async Task<IActionResult> GetFolderContent(
+        int folderId,
+        [FromQuery] int userId)
+    {
+        var folder = await _context.Folders
+            .FirstOrDefaultAsync(f => f.Id == folderId);
+
+        if (folder == null)
+        {
+            return NotFound("Папка не найдена.");
+        }
+
+        var hasAccess =
+            folder.OwnerId == userId ||
+            await _context.FolderAccesses.AnyAsync(a =>
+                a.FolderId == folderId &&
+                a.UserId == userId);
+
+        if (!hasAccess)
+        {
+            return StatusCode(403, "Нет доступа.");
+        }
+
+        var childFolders = await _context.Folders
+            .Where(f => f.ParentFolderId == folderId)
+            .OrderByDescending(f => f.UpdatedAt)
+            .Select(f => new
+            {
+                Type = "folder",
+                f.Id,
+                f.Name,
+                f.CreatedAt,
+                f.UpdatedAt
+            })
+            .ToListAsync();
+
+        var photos = await _context.PhotoFolders
+            .Where(pf => pf.FolderId == folderId)
+            .Include(pf => pf.Photo)
+            .ThenInclude(p => p.Owner)
+            .OrderByDescending(pf => pf.Photo.UploadedAt)
+            .Select(pf => new
+            {
+                Type = "photo",
+                pf.Photo.Id,
+                pf.Photo.FileUrl,
+                pf.Photo.ThumbnailUrl,
+                pf.Photo.Note,
+                pf.Photo.UploadedAt,
+                OwnerName = pf.Photo.Owner.Username
+            })
+            .ToListAsync();
+
+        return Ok(new
+        {
+            FolderId = folder.Id,
+            FolderName = folder.Name,
+            ChildFolders = childFolders,
+            Photos = photos
+        });
+    }
+
     [HttpPut("{folderId}")]
     public async Task<IActionResult> RenameFolder(int folderId, UpdateFolderDto dto)
     {
