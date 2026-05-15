@@ -25,6 +25,8 @@ export default function HomeScreen() {
   const [ownFolders, setOwnFolders] = useState<Folder[]>([]);
   const [sharedFolders, setSharedFolders] = useState<Folder[]>([]);
   const [search, setSearch] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
 
   const loadFolders = async () => {
     const response = await api.get(`/Folders/home/${userId}`);
@@ -32,6 +34,21 @@ export default function HomeScreen() {
     setOwnFolders(response.data.ownFolders);
     setSharedFolders(response.data.sharedFolders);
   };
+  const createFolder = async () => {
+  if (!newFolderName.trim()) {
+    return;
+  }
+
+  await api.post("/Folders", {
+    name: newFolderName,
+    ownerId: Number(userId),
+    parentFolderId: null,
+  });
+
+  setNewFolderName("");
+  setMenuOpen(false);
+  loadFolders();
+};
 
   useEffect(() => {
     loadFolders();
@@ -102,9 +119,28 @@ export default function HomeScreen() {
         </View>
       </ScrollView>
 
-      <TouchableOpacity style={styles.addButton}>
-        <Text style={styles.addButtonText}>+</Text>
-      </TouchableOpacity>
+        {menuOpen && (
+            <View style={styles.addMenu}>
+                <TextInput
+                style={styles.folderInput}
+                placeholder="Название папки"
+                placeholderTextColor="#8E8E8E"
+                value={newFolderName}
+                onChangeText={setNewFolderName}
+                />
+
+                <TouchableOpacity style={styles.menuButton} onPress={createFolder}>
+                <Text style={styles.menuButtonText}>Создать папку</Text>
+                </TouchableOpacity>
+  </View>
+)}
+
+<TouchableOpacity
+  style={styles.addButton}
+  onPress={() => setMenuOpen(!menuOpen)}
+>
+  <Text style={styles.addButtonText}>{menuOpen ? "×" : "+"}</Text>
+</TouchableOpacity>
     </View>
   );
 }
@@ -227,4 +263,44 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginTop: -4,
   },
+
+  addMenu: {
+    position: "absolute",
+    left: 20,
+    right: 20,
+    bottom: 94,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 24,
+    padding: 16,
+    shadowColor: "#9A6BCB",
+    shadowOpacity: 0.25,
+    shadowRadius: 24,
+    shadowOffset: {
+        width: 0,
+        height: 0,
+    },
+    elevation: 16,
+    },
+
+    folderInput: {
+    backgroundColor: "#EFEFEF",
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 16,
+    marginBottom: 12,
+    },
+
+    menuButton: {
+    backgroundColor: "#9A6BCB",
+    borderRadius: 14,
+    paddingVertical: 13,
+    alignItems: "center",
+    },
+
+    menuButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+    },
 });
