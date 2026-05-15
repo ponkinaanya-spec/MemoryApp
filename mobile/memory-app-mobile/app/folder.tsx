@@ -58,47 +58,34 @@ export default function FolderScreen() {
   setMenuOpen(false);
   loadFolder();
 };
-  const uploadPhoto = async () => {
-  const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const uploadPhoto = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-  if (!permission.granted) {
-    alert("Нужно разрешить доступ к галерее");
-    return;
-  }
+    if (!permission.granted) {
+        alert("Нужно разрешить доступ к галерее");
+        return;
+    }
 
-  const result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ["images"],
-    allowsMultipleSelection: false,
-    quality: 0.8,
-  });
+    const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsMultipleSelection: false,
+        quality: 0.8,
+    });
 
-  if (result.canceled) {
-    return;
-  }
+    if (result.canceled) {
+        return;
+    }
 
-  const image = result.assets[0];
+    const image = result.assets[0];
 
-  const formData = new FormData();
+    setMenuOpen(false);
 
-  formData.append("ownerId", String(userId));
-  formData.append("note", "");
-  formData.append("folderIds", String(folderId));
-
-  formData.append("file", {
-    uri: image.uri,
-    name: "photo.jpg",
-    type: "image/jpeg",
-  } as any);
-
-  await api.post("/Photos/upload", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
-
-  setMenuOpen(false);
-  loadFolder();
-};
+    router.push(
+        `/photo-preview?folderId=${folderId}&userId=${userId}&imageUri=${encodeURIComponent(
+        image.uri
+        )}`
+    );
+    };
 
   useEffect(() => {
     loadFolder();
