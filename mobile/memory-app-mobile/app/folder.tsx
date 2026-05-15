@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useLocalSearchParams, router } from "expo-router";
+import { useEffect, useState, useCallback } from "react";
+import { useLocalSearchParams, router, useFocusEffect } from "expo-router";
 import {
   View,
   Text,
@@ -22,6 +22,7 @@ type PhotoItem = {
   id: number;
   fileUrl: string;
   ownerName: string;
+  uploadedAt: string;
 };
 
 export default function FolderScreen() {
@@ -91,6 +92,32 @@ export default function FolderScreen() {
     loadFolder();
   }, []);
 
+  useFocusEffect(
+    useCallback(() => {
+        loadFolder();
+    }, [folderId])
+    );
+    const formatDateTitle = (dateString: string) => {
+  const date = new Date(dateString);
+
+  return date.toLocaleDateString("ru-RU", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+};
+
+const groupedPhotos = photos.reduce((groups: Record<string, PhotoItem[]>, photo) => {
+  const dateTitle = formatDateTitle(photo.uploadedAt);
+
+  if (!groups[dateTitle]) {
+    groups[dateTitle] = [];
+  }
+
+  groups[dateTitle].push(photo);
+
+  return groups;
+}, {});
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -129,30 +156,34 @@ export default function FolderScreen() {
             </TouchableOpacity>
           ))}
 
-        {photos.map((photo) => (
+{Object.entries(groupedPhotos).map(([dateTitle, datePhotos]) => (
+  <View key={dateTitle} style={styles.dateGroup}>
+    <Text style={styles.dateTitle}>{dateTitle}</Text>
+
+    <View style={styles.photoGrid}>
+      {datePhotos.map((photo) => (
         <TouchableOpacity
-            key={photo.id}
-            style={styles.card}
-            onPress={() =>
-                router.push(
-                `/photo?photoId=${photo.id}`
-                )
-            }
-            >
-            <Image
+          key={photo.id}
+          style={styles.card}
+          onPress={() =>
+            router.push(`/photo?photoId=${photo.id}`)
+          }
+        >
+          <Image
             source={{
-                uri: `http://192.168.1.10:5158${photo.fileUrl}`,
+              uri: `http://192.168.1.10:5158${photo.fileUrl}`,
             }}
             style={styles.photoImage}
-            />
+          />
 
-            <View style={styles.overlay}>
-            <Text style={styles.cardText}>
-                {photo.ownerName}
-            </Text>
-            </View>
+          <View style={styles.overlay}>
+            <Text style={styles.cardText}>{photo.ownerName}</Text>
+          </View>
         </TouchableOpacity>
-        ))}
+      ))}
+    </View>
+  </View>
+))}
         </View>
       </ScrollView>
       {menuOpen && (
@@ -220,7 +251,7 @@ const styles = StyleSheet.create({
   },
 
   card: {
-    width: "31.8%",
+    width: "23.5%",
     aspectRatio: 1,
     borderRadius: 12,
     overflow: "hidden",
@@ -332,5 +363,23 @@ menuButtonSecondary: {
 photoImage: {
   width: "100%",
   height: "100%",
+},
+
+dateGroup: {
+  width: "100%",
+  marginTop: 18,
+},
+
+dateTitle: {
+  fontSize: 18,
+  fontWeight: "700",
+  color: "#2E2E2E",
+  marginBottom: 10,
+},
+
+photoGrid: {
+  flexDirection: "row",
+  flexWrap: "wrap",
+  gap: 8,
 },
 });
