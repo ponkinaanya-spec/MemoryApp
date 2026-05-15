@@ -21,7 +21,7 @@ export default function LoginScreen() {
       <Text style={styles.logo}>Memory</Text>
 
       {/* ФИОЛЕТОВЫЙ БЛЮР/СВЕЧЕНИЕ */}
-      <View style={styles.glow} />
+      
 
       <View style={styles.card}>
         <Text style={styles.title}>Вход</Text>
@@ -74,42 +74,22 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
 
-  /* ФИОЛЕТОВОЕ СВЕЧЕНИЕ */
-  glow: {
-    position: "absolute",
-    width: 340,
-    height: 340,
-    backgroundColor: "#42226a",
-    borderRadius: 200,
-    alignSelf: "center",
-    top: 220,
-    opacity: 0.35,
 
-    shadowColor: "#441f74",
-    shadowOpacity: 0.9,
-    shadowRadius: 80,
-    shadowOffset: {
-      width: 0,
-      height: 0,
-    },
-
-    elevation: 40,
-  },
 
   card: {
     backgroundColor: "#FFFFFF",
     borderRadius: 34,
     padding: 24,
 
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
+    shadowColor: "#4d2777",
+    shadowOpacity: 0.25,
+    shadowRadius: 30,
     shadowOffset: {
       width: 0,
-      height: 6,
+      height: 0,
     },
 
-    elevation: 10,
+    elevation: 18,
     zIndex: 2,
   },
 
