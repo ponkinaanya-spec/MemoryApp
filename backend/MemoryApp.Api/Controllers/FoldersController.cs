@@ -212,56 +212,32 @@ public class FoldersController : ControllerBase
     {
         var ownFolders = await _context.Folders
             .Where(f => f.OwnerId == userId)
-            .OrderByDescending(f => f.IsPinned)
-            .ThenByDescending(f => f.UpdatedAt)
+            .OrderByDescending(f => f.UpdatedAt)
             .Select(f => new
             {
                 f.Id,
                 f.Name,
-                f.IsPinned,
-                f.ParentFolderId,
-                f.CreatedAt,
-                f.UpdatedAt,
-
-                PreviewPhotos = _context.PhotoFolders
-                    .Where(pf => pf.FolderId == f.Id)
-                    .Include(pf => pf.Photo)
-                    .OrderByDescending(pf => pf.Photo.UploadedAt)
-                    .Take(4)
-                    .Select(pf => pf.Photo.ThumbnailUrl)
-                    .ToList()
+                PreviewPhotos = new List<string>()
             })
             .ToListAsync();
 
         var sharedFolders = await _context.FolderAccesses
             .Where(a => a.UserId == userId)
-            .Include(a => a.Folder)
-            .OrderByDescending(a => a.Folder.UpdatedAt)
-            .Select(a => new
+            .Select(a => a.Folder)
+            .Distinct()
+            .OrderByDescending(f => f.UpdatedAt)
+            .Select(f => new
             {
-                a.Folder.Id,
-                a.Folder.Name,
-                a.Folder.IsPinned,
-                a.Folder.ParentFolderId,
-                a.Folder.CreatedAt,
-                a.Folder.UpdatedAt,
-
-                AccessType = a.AccessType,
-
-                PreviewPhotos = _context.PhotoFolders
-                    .Where(pf => pf.FolderId == a.Folder.Id)
-                    .Include(pf => pf.Photo)
-                    .OrderByDescending(pf => pf.Photo.UploadedAt)
-                    .Take(4)
-                    .Select(pf => pf.Photo.ThumbnailUrl)
-                    .ToList()
+                f.Id,
+                f.Name,
+                PreviewPhotos = new List<string>()
             })
             .ToListAsync();
 
         return Ok(new
         {
-            OwnFolders = ownFolders,
-            SharedFolders = sharedFolders
+            ownFolders,
+            sharedFolders
         });
-}
+    }
 }
