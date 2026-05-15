@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { router } from "expo-router";
+import { api } from "../src/services/api";
 import {
   View,
   Text,
@@ -13,9 +14,25 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = () => {
-    Alert.alert("Вход", `Email: ${email}`);
-  };
+const handleLogin = async () => {
+  try {
+    const response = await api.post("/Auth/login", {
+      email,
+      password,
+    });
+
+    router.push(
+      `/home?userId=${response.data.id}&username=${response.data.username}`
+    );
+  } catch (error: any) {
+    Alert.alert(
+      "Ошибка",
+      error.response?.data ||
+        error.message ||
+        "Login error"
+    );
+  }
+};
 
   return (
     <View style={styles.container}>
