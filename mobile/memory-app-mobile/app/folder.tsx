@@ -10,6 +10,7 @@ import {
 } from "react-native";
 
 import { api } from "../src/services/api";
+import * as ImagePicker from "expo-image-picker";
 
 type FolderItem = {
   id: number;
@@ -53,6 +54,47 @@ export default function FolderScreen() {
   });
 
   setNewFolderName("");
+  setMenuOpen(false);
+  loadFolder();
+};
+  const uploadPhoto = async () => {
+  const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+  if (!permission.granted) {
+    alert("Нужно разрешить доступ к галерее");
+    return;
+  }
+
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ["images"],
+    allowsMultipleSelection: false,
+    quality: 0.8,
+  });
+
+  if (result.canceled) {
+    return;
+  }
+
+  const image = result.assets[0];
+
+  const formData = new FormData();
+
+  formData.append("ownerId", String(userId));
+  formData.append("note", "");
+  formData.append("folderIds", String(folderId));
+
+  formData.append("file", {
+    uri: image.uri,
+    name: "photo.jpg",
+    type: "image/jpeg",
+  } as any);
+
+  await api.post("/Photos/upload", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
   setMenuOpen(false);
   loadFolder();
 };
@@ -122,6 +164,10 @@ export default function FolderScreen() {
 
             <TouchableOpacity style={styles.menuButton} onPress={createChildFolder}>
             <Text style={styles.menuButtonText}>Создать папку</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.menuButtonSecondary} onPress={uploadPhoto}>
+            <Text style={styles.menuButtonText}>Добавить фото</Text>
             </TouchableOpacity>
         </View>
         )}
@@ -270,5 +316,13 @@ menuButtonText: {
   color: "#FFFFFF",
   fontSize: 16,
   fontWeight: "700",
+},
+
+menuButtonSecondary: {
+  backgroundColor: "#9A6BCB",
+  borderRadius: 14,
+  paddingVertical: 13,
+  alignItems: "center",
+  marginTop: 10,
 },
 });

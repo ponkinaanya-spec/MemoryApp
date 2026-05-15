@@ -211,7 +211,7 @@ public class FoldersController : ControllerBase
     public async Task<IActionResult> GetHomeFolders(int userId)
     {
         var ownFolders = await _context.Folders
-            .Where(f => f.OwnerId == userId)
+            .Where(f => f.OwnerId == userId && f.ParentFolderId == null)    
             .OrderByDescending(f => f.UpdatedAt)
             .Select(f => new
             {

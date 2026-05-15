@@ -54,13 +54,13 @@ export default function HomeScreen() {
     loadFolders();
   }, []);
 
-  const filteredOwnFolders = ownFolders.filter((folder) =>
+    const filteredOwnFolders = ownFolders.filter((folder) =>
     folder.name.toLowerCase().includes(search.toLowerCase())
-  );
+    );
 
-  const filteredSharedFolders = sharedFolders.filter((folder) =>
+    const filteredSharedFolders = sharedFolders.filter((folder) =>
     folder.name.toLowerCase().includes(search.toLowerCase())
-  );
+    );
 
   return (
     <View style={styles.container}>
