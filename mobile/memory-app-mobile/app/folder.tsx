@@ -6,6 +6,7 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  TextInput,
 } from "react-native";
 
 import { api } from "../src/services/api";
@@ -27,6 +28,8 @@ export default function FolderScreen() {
   const [folderName, setFolderName] = useState("");
   const [folders, setFolders] = useState<FolderItem[]>([]);
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
 
   const loadFolder = async () => {
     const response = await api.get(
@@ -37,6 +40,22 @@ export default function FolderScreen() {
     setFolders(response.data.childFolders);
     setPhotos(response.data.photos);
   };
+
+  const createChildFolder = async () => {
+  if (!newFolderName.trim()) {
+    return;
+  }
+
+  await api.post("/Folders", {
+    name: newFolderName,
+    ownerId: Number(userId),
+    parentFolderId: Number(folderId),
+  });
+
+  setNewFolderName("");
+  setMenuOpen(false);
+  loadFolder();
+};
 
   useEffect(() => {
     loadFolder();
@@ -91,6 +110,28 @@ export default function FolderScreen() {
           ))}
         </View>
       </ScrollView>
+      {menuOpen && (
+        <View style={styles.addMenu}>
+            <TextInput
+            style={styles.folderInput}
+            placeholder="Название вложенной папки"
+            placeholderTextColor="#8E8E8E"
+            value={newFolderName}
+            onChangeText={setNewFolderName}
+            />
+
+            <TouchableOpacity style={styles.menuButton} onPress={createChildFolder}>
+            <Text style={styles.menuButtonText}>Создать папку</Text>
+            </TouchableOpacity>
+        </View>
+        )}
+
+        <TouchableOpacity
+        style={styles.addButton}
+        onPress={() => setMenuOpen(!menuOpen)}
+        >
+        <Text style={styles.addButtonText}>{menuOpen ? "×" : "+"}</Text>
+        </TouchableOpacity>
     </View>
   );
 }
@@ -170,4 +211,64 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "700",
   },
+
+  addButton: {
+  position: "absolute",
+  bottom: 28,
+  alignSelf: "center",
+  width: 54,
+  height: 54,
+  borderRadius: 16,
+  backgroundColor: "#9A6BCB",
+  alignItems: "center",
+  justifyContent: "center",
+  elevation: 8,
+},
+
+addButtonText: {
+  color: "#FFFFFF",
+  fontSize: 36,
+  fontWeight: "700",
+  marginTop: -4,
+},
+
+addMenu: {
+  position: "absolute",
+  left: 20,
+  right: 20,
+  bottom: 94,
+  backgroundColor: "#FFFFFF",
+  borderRadius: 24,
+  padding: 16,
+  shadowColor: "#9A6BCB",
+  shadowOpacity: 0.25,
+  shadowRadius: 24,
+  shadowOffset: {
+    width: 0,
+    height: 0,
+  },
+  elevation: 16,
+},
+
+folderInput: {
+  backgroundColor: "#EFEFEF",
+  borderRadius: 14,
+  paddingHorizontal: 14,
+  paddingVertical: 12,
+  fontSize: 16,
+  marginBottom: 12,
+},
+
+menuButton: {
+  backgroundColor: "#9A6BCB",
+  borderRadius: 14,
+  paddingVertical: 13,
+  alignItems: "center",
+},
+
+menuButtonText: {
+  color: "#FFFFFF",
+  fontSize: 16,
+  fontWeight: "700",
+},
 });
