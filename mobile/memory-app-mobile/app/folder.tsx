@@ -26,19 +26,21 @@ type PhotoItem = {
 };
 
 export default function FolderScreen() {
-  const { folderId, userId } = useLocalSearchParams();
+    const { folderId, userId } = useLocalSearchParams();
 
-  const [folderName, setFolderName] = useState("");
-  const [folders, setFolders] = useState<FolderItem[]>([]);
-  const [photos, setPhotos] = useState<PhotoItem[]>([]);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [newFolderName, setNewFolderName] = useState("");
+    const [folderName, setFolderName] = useState("");
+    const [folders, setFolders] = useState<FolderItem[]>([]);
+    const [photos, setPhotos] = useState<PhotoItem[]>([]);
+    const [menuOpen, setMenuOpen] = useState(false);
+    const [newFolderName, setNewFolderName] = useState("");
 
-  const [accessMenuOpen, setAccessMenuOpen] = useState(false);
+    const [accessMenuOpen, setAccessMenuOpen] = useState(false);
     const [accessUser, setAccessUser] = useState("");
     const [accessType, setAccessType] = useState<"viewer" | "editor">("viewer");
+    const [canEdit, setCanEdit] = useState(false);
+    const [canDelete, setCanDelete] = useState(false);
 
-  const loadFolder = async () => {
+    const loadFolder = async () => {
     const response = await api.get(
       `/Folders/content/${folderId}?userId=${userId}`
     );
@@ -46,6 +48,8 @@ export default function FolderScreen() {
     setFolderName(response.data.folderName);
     setFolders(response.data.childFolders);
     setPhotos(response.data.photos);
+    setCanEdit(response.data.canEdit);
+    setCanDelete(response.data.canDelete);
   };
 
   const createChildFolder = async () => {
@@ -259,7 +263,7 @@ const groupedPhotos = photos.reduce((groups: Record<string, PhotoItem[]>, photo)
 ))}
         </View>
       </ScrollView>
-      {menuOpen && (
+    {canEdit && menuOpen && (
         <View style={styles.addMenu}>
             <TextInput
             style={styles.folderInput}
@@ -279,12 +283,16 @@ const groupedPhotos = photos.reduce((groups: Record<string, PhotoItem[]>, photo)
         </View>
         )}
 
+        {canEdit && (
         <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => setMenuOpen(!menuOpen)}
+            style={styles.addButton}
+            onPress={() => setMenuOpen(!menuOpen)}
         >
-        <Text style={styles.addButtonText}>{menuOpen ? "×" : "+"}</Text>
+            <Text style={styles.addButtonText}>
+            {menuOpen ? "×" : "+"}
+            </Text>
         </TouchableOpacity>
+        )}
     </View>
   );
 }
