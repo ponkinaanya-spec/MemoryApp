@@ -7,6 +7,7 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
+  Image,
 } from "react-native";
 
 import { api } from "../src/services/api";
@@ -136,20 +137,22 @@ export default function FolderScreen() {
             </TouchableOpacity>
           ))}
 
-          {photos.map((photo) => (
-            <TouchableOpacity
-              key={photo.id}
-              style={styles.card}
-            >
-              <View style={styles.photoPlaceholder} />
+        {photos.map((photo) => (
+        <TouchableOpacity key={photo.id} style={styles.card}>
+            <Image
+            source={{
+                uri: `http://192.168.1.10:5158${photo.fileUrl}`,
+            }}
+            style={styles.photoImage}
+            />
 
-              <View style={styles.overlay}>
-                <Text style={styles.cardText}>
-                  {photo.ownerName}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ))}
+            <View style={styles.overlay}>
+            <Text style={styles.cardText}>
+                {photo.ownerName}
+            </Text>
+            </View>
+        </TouchableOpacity>
+        ))}
         </View>
       </ScrollView>
       {menuOpen && (
@@ -324,5 +327,10 @@ menuButtonSecondary: {
   paddingVertical: 13,
   alignItems: "center",
   marginTop: 10,
+},
+
+photoImage: {
+  width: "100%",
+  height: "100%",
 },
 });
