@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, router } from "expo-router";
 import {
   View,
   Text,
@@ -86,16 +86,24 @@ export default function HomeScreen() {
 
         <View style={styles.grid}>
           {filteredOwnFolders.map((folder) => (
-            <TouchableOpacity key={folder.id} style={styles.card}>
-              <View style={styles.previewGrid}>
+            <TouchableOpacity
+            key={folder.id}
+            style={styles.card}
+            onPress={() =>
+                router.push(
+                `/folder?folderId=${folder.id}&userId=${userId}`
+                )
+            }
+            >
+            <View style={styles.previewGrid}>
                 {[0, 1, 2, 3].map((item) => (
-                  <View key={item} style={styles.previewBox} />
+                <View key={item} style={styles.previewBox} />
                 ))}
-              </View>
+            </View>
 
-              <View style={styles.cardOverlay}>
+            <View style={styles.cardOverlay}>
                 <Text style={styles.cardText}>{folder.name}</Text>
-              </View>
+            </View>
             </TouchableOpacity>
           ))}
         </View>
