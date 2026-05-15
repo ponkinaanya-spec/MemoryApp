@@ -37,6 +37,8 @@ export default function FolderScreen() {
     const [accessMenuOpen, setAccessMenuOpen] = useState(false);
     const [accessUser, setAccessUser] = useState("");
     const [accessType, setAccessType] = useState<"viewer" | "editor">("viewer");
+    const [folderSettingsOpen, setFolderSettingsOpen] = useState(false);
+    const [editedFolderName, setEditedFolderName] = useState("");   
     const [canEdit, setCanEdit] = useState(false);
     const [canDelete, setCanDelete] = useState(false);
 
@@ -46,6 +48,7 @@ export default function FolderScreen() {
     );
 
     setFolderName(response.data.folderName);
+    setEditedFolderName(response.data.folderName);
     setFolders(response.data.childFolders);
     setPhotos(response.data.photos);
     setCanEdit(response.data.canEdit);
@@ -83,6 +86,27 @@ export default function FolderScreen() {
     setAccessUser("");
     setAccessType("viewer");
     setAccessMenuOpen(false);
+    };
+
+    const renameFolder = async () => {
+    if (!editedFolderName.trim()) {
+        return;
+    }
+
+    await api.put(`/Folders/${folderId}`, {
+        name: editedFolderName,
+    });
+
+    setFolderName(editedFolderName);
+    setFolderSettingsOpen(false);
+    };
+
+    const deleteFolder = async (keepChildren: boolean) => {
+    await api.delete(
+        `/Folders/${folderId}?userId=${userId}&keepChildren=${keepChildren}`
+    );
+
+    router.back();
     };
     const uploadPhoto = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -150,7 +174,9 @@ const groupedPhotos = photos.reduce((groups: Record<string, PhotoItem[]>, photo)
           <Text style={styles.back}>‹ Назад</Text>
         </TouchableOpacity>
 
+        <TouchableOpacity onPress={() => canDelete && setFolderSettingsOpen(!folderSettingsOpen)}>
         <Text style={styles.title}>{folderName}</Text>
+        </TouchableOpacity>
 
         <TouchableOpacity onPress={() => setAccessMenuOpen(!accessMenuOpen)}>
             <Text style={styles.accessButton}>Доступ</Text>
@@ -204,6 +230,39 @@ const groupedPhotos = photos.reduce((groups: Record<string, PhotoItem[]>, photo)
 
                 <TouchableOpacity style={styles.menuButton} onPress={grantAccess}>
                 <Text style={styles.menuButtonText}>Выдать доступ</Text>
+                </TouchableOpacity>
+            </View>
+            )}
+            {folderSettingsOpen && (
+            <View style={styles.settingsMenu}>
+                <TextInput
+                style={styles.folderInput}
+                placeholder="Название папки"
+                placeholderTextColor="#8E8E8E"
+                value={editedFolderName}
+                onChangeText={setEditedFolderName}
+                />
+
+                <TouchableOpacity style={styles.menuButton} onPress={renameFolder}>
+                <Text style={styles.menuButtonText}>Сохранить название</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                style={styles.deleteOption}
+                onPress={() => deleteFolder(false)}
+                >
+                <Text style={styles.deleteOptionText}>
+                    Удалить всё содержимое
+                </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                style={styles.deleteOptionLight}
+                onPress={() => deleteFolder(true)}
+                >
+                <Text style={styles.deleteOptionLightText}>
+                    Удалить папку, оставив дочерние
+                </Text>
                 </TouchableOpacity>
             </View>
             )}
@@ -512,5 +571,48 @@ roleText: {
 
 roleTextActive: {
   color: "#FFFFFF",
+},
+
+settingsMenu: {
+  backgroundColor: "#FFFFFF",
+  borderRadius: 22,
+  padding: 14,
+  marginBottom: 16,
+  shadowColor: "#9A6BCB",
+  shadowOpacity: 0.18,
+  shadowRadius: 18,
+  shadowOffset: {
+    width: 0,
+    height: 0,
+  },
+  elevation: 10,
+},
+
+deleteOption: {
+  backgroundColor: "#7E3F61",
+  borderRadius: 14,
+  paddingVertical: 13,
+  alignItems: "center",
+  marginTop: 10,
+},
+
+deleteOptionText: {
+  color: "#FFFFFF",
+  fontSize: 15,
+  fontWeight: "700",
+},
+
+deleteOptionLight: {
+  backgroundColor: "#F0E6F7",
+  borderRadius: 14,
+  paddingVertical: 13,
+  alignItems: "center",
+  marginTop: 10,
+},
+
+deleteOptionLightText: {
+  color: "#7E3F61",
+  fontSize: 15,
+  fontWeight: "700",
 },
 });

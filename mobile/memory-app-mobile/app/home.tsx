@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useLocalSearchParams, router } from "expo-router";
+import { useEffect, useState, useCallback } from "react";
+import { useLocalSearchParams, router, useFocusEffect } from "expo-router";
 import {
   View,
   Text,
@@ -53,6 +53,12 @@ export default function HomeScreen() {
   useEffect(() => {
     loadFolders();
   }, []);
+
+  useFocusEffect(
+  useCallback(() => {
+    loadFolders();
+  }, [userId])
+);
 
     const filteredOwnFolders = ownFolders.filter((folder) =>
     folder.name.toLowerCase().includes(search.toLowerCase())
