@@ -118,10 +118,15 @@ export default function FolderScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.grid}>
-          {folders.map((folder) => (
+            {folders.map((folder) => (
             <TouchableOpacity
-              key={folder.id}
-              style={styles.card}
+                key={folder.id}
+                style={styles.card}
+                onPress={() =>
+                router.push(
+                    `/folder?folderId=${folder.id}&userId=${userId}`
+                )
+                }
             >
               <View style={styles.previewGrid}>
                 {[0, 1, 2, 3].map((item) => (
@@ -138,7 +143,15 @@ export default function FolderScreen() {
           ))}
 
         {photos.map((photo) => (
-        <TouchableOpacity key={photo.id} style={styles.card}>
+        <TouchableOpacity
+            key={photo.id}
+            style={styles.card}
+            onPress={() =>
+                router.push(
+                `/photo?photoId=${photo.id}`
+                )
+            }
+            >
             <Image
             source={{
                 uri: `http://192.168.1.10:5158${photo.fileUrl}`,
