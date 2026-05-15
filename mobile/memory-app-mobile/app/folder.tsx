@@ -34,6 +34,10 @@ export default function FolderScreen() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
 
+  const [accessMenuOpen, setAccessMenuOpen] = useState(false);
+    const [accessUser, setAccessUser] = useState("");
+    const [accessType, setAccessType] = useState<"viewer" | "editor">("viewer");
+
   const loadFolder = async () => {
     const response = await api.get(
       `/Folders/content/${folderId}?userId=${userId}`
@@ -48,6 +52,7 @@ export default function FolderScreen() {
   if (!newFolderName.trim()) {
     return;
   }
+  
 
   await api.post("/Folders", {
     name: newFolderName,
@@ -59,6 +64,22 @@ export default function FolderScreen() {
   setMenuOpen(false);
   loadFolder();
 };
+
+    const grantAccess = async () => {
+    if (!accessUser.trim()) {
+        return;
+    }
+
+    await api.post("/FolderAccess/grant", {
+        folderId: Number(folderId),
+        userEmailOrUsername: accessUser,
+        accessType,
+    });
+
+    setAccessUser("");
+    setAccessType("viewer");
+    setAccessMenuOpen(false);
+    };
     const uploadPhoto = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
@@ -127,9 +148,61 @@ const groupedPhotos = photos.reduce((groups: Record<string, PhotoItem[]>, photo)
 
         <Text style={styles.title}>{folderName}</Text>
 
-        <View style={{ width: 60 }} />
+        <TouchableOpacity onPress={() => setAccessMenuOpen(!accessMenuOpen)}>
+            <Text style={styles.accessButton}>Доступ</Text>
+        </TouchableOpacity>
       </View>
+        {accessMenuOpen && (
+            <View style={styles.accessMenu}>
+                <TextInput
+                style={styles.folderInput}
+                placeholder="Имя или почта пользователя"
+                placeholderTextColor="#8E8E8E"
+                value={accessUser}
+                onChangeText={setAccessUser}
+                />
 
+                <View style={styles.roleRow}>
+                <TouchableOpacity
+                    style={[
+                    styles.roleButton,
+                    accessType === "viewer" && styles.roleButtonActive,
+                    ]}
+                    onPress={() => setAccessType("viewer")}
+                >
+                    <Text
+                    style={[
+                        styles.roleText,
+                        accessType === "viewer" && styles.roleTextActive,
+                    ]}
+                    >
+                    Просмотр
+                    </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={[
+                    styles.roleButton,
+                    accessType === "editor" && styles.roleButtonActive,
+                    ]}
+                    onPress={() => setAccessType("editor")}
+                >
+                    <Text
+                    style={[
+                        styles.roleText,
+                        accessType === "editor" && styles.roleTextActive,
+                    ]}
+                    >
+                    Редактор
+                    </Text>
+                </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity style={styles.menuButton} onPress={grantAccess}>
+                <Text style={styles.menuButtonText}>Выдать доступ</Text>
+                </TouchableOpacity>
+            </View>
+            )}
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.grid}>
             {folders.map((folder) => (
@@ -381,5 +454,55 @@ photoGrid: {
   flexDirection: "row",
   flexWrap: "wrap",
   gap: 8,
+},
+
+accessButton: {
+  color: "#9A6BCB",
+  fontSize: 14,
+  fontWeight: "700",
+  width: 70,
+  textAlign: "right",
+},
+
+accessMenu: {
+  backgroundColor: "#FFFFFF",
+  borderRadius: 22,
+  padding: 14,
+  marginBottom: 16,
+  shadowColor: "#9A6BCB",
+  shadowOpacity: 0.18,
+  shadowRadius: 18,
+  shadowOffset: {
+    width: 0,
+    height: 0,
+  },
+  elevation: 10,
+},
+
+roleRow: {
+  flexDirection: "row",
+  gap: 10,
+  marginBottom: 12,
+},
+
+roleButton: {
+  flex: 1,
+  backgroundColor: "#EFEFEF",
+  borderRadius: 14,
+  paddingVertical: 12,
+  alignItems: "center",
+},
+
+roleButtonActive: {
+  backgroundColor: "#9A6BCB",
+},
+
+roleText: {
+  color: "#6E6E6E",
+  fontWeight: "700",
+},
+
+roleTextActive: {
+  color: "#FFFFFF",
 },
 });

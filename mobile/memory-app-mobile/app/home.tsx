@@ -112,7 +112,15 @@ export default function HomeScreen() {
 
         <View style={styles.grid}>
           {filteredSharedFolders.map((folder) => (
-            <TouchableOpacity key={folder.id} style={styles.card}>
+            <TouchableOpacity
+                key={folder.id}
+                style={styles.card}
+                onPress={() =>
+                router.push(
+                    `/folder?folderId=${folder.id}&userId=${userId}`
+                )
+                }
+            >
               <View style={styles.previewGrid}>
                 {[0, 1, 2, 3].map((item) => (
                   <View key={item} style={styles.previewBox} />
