@@ -3,3 +3,4 @@ obj/
 .vs/
 node_modules/
 .env
+appsettings.Development.json
