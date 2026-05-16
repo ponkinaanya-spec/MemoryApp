@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useLocalSearchParams, router } from "expo-router";
+import { useEffect, useState, useCallback } from "react";
+import { useLocalSearchParams, router, useFocusEffect } from "expo-router";
 import {
   View,
   Text,
@@ -7,20 +7,48 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
+  Image,
 } from "react-native";
+
+import { api } from "../src/services/api";
 
 type Friend = {
   id: number;
   username: string;
   email: string;
+  avatarUrl?: string | null;
 };
 
 export default function FriendsScreen() {
   const { userId } = useLocalSearchParams();
 
   const [search, setSearch] = useState("");
+  const [friends, setFriends] = useState<Friend[]>([]);
 
-  const [friends] = useState<Friend[]>([]);
+  const loadFriends = async () => {
+    const response = await api.get(`/Friends/${userId}`);
+    setFriends(response.data);
+  };
+
+  useEffect(() => {
+    loadFriends();
+  }, []);
+
+  useFocusEffect(
+  useCallback(() => {
+    loadFriends();
+  }, [userId])
+);  
+
+  const removeFriend = async (friendId: number) => {
+    await api.delete(
+      `/Friends?userId=${userId}&friendId=${friendId}`
+    );
+
+    setFriends((prev) =>
+      prev.filter((friend) => friend.id !== friendId)
+    );
+  };
 
   const filteredFriends = friends.filter(
     (friend) =>
@@ -41,7 +69,13 @@ export default function FriendsScreen() {
 
         <Text style={styles.title}>Друзья</Text>
 
-        <View style={{ width: 70 }} />
+        <TouchableOpacity
+            onPress={() =>
+                router.push(`/search-users?userId=${userId}`)
+            }
+            >
+            <Text style={styles.addFriend}>Добавить</Text>
+            </TouchableOpacity>
       </View>
 
       <TextInput
@@ -54,34 +88,48 @@ export default function FriendsScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {filteredFriends.map((friend) => (
-          <View key={friend.id} style={styles.friendCard}>
-            <View style={styles.left}>
-              <View style={styles.avatar}>
+        <View key={friend.id} style={styles.friendCard}>
+        <TouchableOpacity
+            style={styles.left}
+            onPress={() =>
+            router.push(
+                `/user-profile?userId=${friend.id}&viewerId=${userId}`
+            )
+            }
+        >
+            {friend.avatarUrl ? (
+            <Image
+                source={{
+                uri: `http://192.168.1.10:5158${friend.avatarUrl}`,
+                }}
+                style={styles.avatarImage}
+            />
+            ) : (
+            <View style={styles.avatar}>
                 <Text style={styles.avatarText}>
-                  {friend.username[0]}
+                {friend.username[0]}
                 </Text>
-              </View>
-
-              <View>
-                <Text style={styles.username}>
-                  {friend.username}
-                </Text>
-
-                <Text style={styles.email}>
-                  {friend.email}
-                </Text>
-              </View>
             </View>
+            )}
 
-            <TouchableOpacity style={styles.removeButton}>
-              <Text style={styles.removeText}>−</Text>
-            </TouchableOpacity>
-          </View>
+            <View>
+            <Text style={styles.username}>{friend.username}</Text>
+            <Text style={styles.email}>{friend.email}</Text>
+            </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+            style={styles.removeButton}
+            onPress={() => removeFriend(friend.id)}
+        >
+            <Text style={styles.removeText}>−</Text>
+        </TouchableOpacity>
+</View>
         ))}
 
         {filteredFriends.length === 0 && (
           <Text style={styles.empty}>
-            Пользователи не найдены
+            Друзей пока нет
           </Text>
         )}
       </ScrollView>
@@ -172,6 +220,13 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
 
+  avatarImage: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    marginRight: 12,
+  },
+
   avatarText: {
     color: "#FFFFFF",
     fontSize: 22,
@@ -212,4 +267,10 @@ const styles = StyleSheet.create({
     color: "#9B9B9B",
     fontSize: 16,
   },
+
+  addFriend: {
+  color: "#9A6BCB",
+  fontSize: 15,
+  fontWeight: "700",
+},
 });
