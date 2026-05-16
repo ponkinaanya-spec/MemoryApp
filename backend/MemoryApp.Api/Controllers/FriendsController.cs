@@ -34,45 +34,127 @@ public class FriendsController : ControllerBase
         return Ok(friends);
     }
 
-    [HttpPost("add")]
-    public async Task<IActionResult> AddFriend(
-        [FromQuery] int userId,
-        [FromQuery] int friendId)
+    [HttpPost("request")]
+    public async Task<IActionResult> SendRequest(
+        [FromQuery] int senderId,
+        [FromQuery] int receiverId)
     {
-        if (userId == friendId)
+        if (senderId == receiverId)
         {
             return BadRequest("Нельзя добавить себя.");
         }
 
-        var exists = await _context.Friendships.AnyAsync(f =>
-            f.UserId == userId &&
-            f.FriendId == friendId);
+        var alreadyFriends = await _context.Friendships
+            .AnyAsync(f =>
+                f.UserId == senderId &&
+                f.FriendId == receiverId);
 
-        if (exists)
+        if (alreadyFriends)
         {
             return BadRequest("Пользователь уже в друзьях.");
         }
 
-        var friendship1 = new Friendship
+        var requestExists = await _context.FriendRequests
+            .AnyAsync(r =>
+                r.SenderId == senderId &&
+                r.ReceiverId == receiverId);
+
+        if (requestExists)
         {
-            UserId = userId,
-            FriendId = friendId
+            return BadRequest("Заявка уже отправлена.");
+        }
+
+        var request = new FriendRequest
+        {
+            SenderId = senderId,
+            ReceiverId = receiverId
         };
 
-        var friendship2 = new Friendship
-        {
-            UserId = friendId,
-            FriendId = userId
-        };
-
-        _context.Friendships.Add(friendship1);
-        _context.Friendships.Add(friendship2);
+        _context.FriendRequests.Add(request);
 
         await _context.SaveChangesAsync();
 
         return Ok(new
         {
-            message = "Друг добавлен"
+            message = "Заявка отправлена"
+        });
+    }
+
+    [HttpGet("requests/{userId}")]
+    public async Task<IActionResult> GetRequests(int userId)
+    {
+        var requests = await _context.FriendRequests
+            .Where(r => r.ReceiverId == userId)
+            .Include(r => r.Sender)
+            .Select(r => new
+            {
+                r.Id,
+                SenderId = r.Sender.Id,
+                r.Sender.Username,
+                r.Sender.Email,
+                r.Sender.AvatarUrl
+            })
+            .ToListAsync();
+
+        return Ok(requests);
+    }
+
+    [HttpPost("accept")]
+    public async Task<IActionResult> AcceptRequest(
+        [FromQuery] int requestId)
+    {
+        var request = await _context.FriendRequests
+            .FirstOrDefaultAsync(r => r.Id == requestId);
+
+        if (request == null)
+        {
+            return NotFound("Заявка не найдена.");
+        }
+
+        var friendship1 = new Friendship
+        {
+            UserId = request.SenderId,
+            FriendId = request.ReceiverId
+        };
+
+        var friendship2 = new Friendship
+        {
+            UserId = request.ReceiverId,
+            FriendId = request.SenderId
+        };
+
+        _context.Friendships.Add(friendship1);
+        _context.Friendships.Add(friendship2);
+
+        _context.FriendRequests.Remove(request);
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new
+        {
+            message = "Заявка принята"
+        });
+    }
+
+    [HttpDelete("decline")]
+    public async Task<IActionResult> DeclineRequest(
+        [FromQuery] int requestId)
+    {
+        var request = await _context.FriendRequests
+            .FirstOrDefaultAsync(r => r.Id == requestId);
+
+        if (request == null)
+        {
+            return NotFound("Заявка не найдена.");
+        }
+
+        _context.FriendRequests.Remove(request);
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new
+        {
+            message = "Заявка отклонена"
         });
     }
 

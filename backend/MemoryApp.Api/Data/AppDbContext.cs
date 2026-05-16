@@ -16,6 +16,7 @@ public class AppDbContext : DbContext
     public DbSet<PhotoFolder> PhotoFolders => Set<PhotoFolder>();
     public DbSet<FolderAccess> FolderAccesses => Set<FolderAccess>();
     public DbSet<Friendship> Friendships => Set<Friendship>();
+    public DbSet<FriendRequest> FriendRequests => Set<FriendRequest>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -45,6 +46,17 @@ public class AppDbContext : DbContext
             .HasOne(f => f.Friend)
             .WithMany()
             .HasForeignKey(f => f.FriendId)
+            .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<FriendRequest>()
+            .HasOne(f => f.Sender)
+            .WithMany()
+            .HasForeignKey(f => f.SenderId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<FriendRequest>()
+            .HasOne(f => f.Receiver)
+            .WithMany()
+            .HasForeignKey(f => f.ReceiverId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }   
