@@ -15,6 +15,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     ));
 
 builder.Services.AddScoped<AccessService>();
+builder.Services.AddScoped<MinioService>();
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

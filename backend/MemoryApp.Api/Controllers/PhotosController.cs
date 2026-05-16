@@ -4,7 +4,6 @@ using MemoryApp.Api.Data;
 using MemoryApp.Api.Models;
 using MemoryApp.Api.Dtos;
 using MemoryApp.Api.Services;
-using MemoryApp.Api.Dtos;
 
 namespace MemoryApp.Api.Controllers;
 
@@ -67,7 +66,6 @@ public class PhotosController : ControllerBase
                     $"Нет доступа к папке {folderId}");
             }
         }
-
         var uploadsPath = Path.Combine(_environment.WebRootPath, "uploads");
 
         if (!Directory.Exists(uploadsPath))
@@ -252,4 +250,5 @@ public class PhotosController : ControllerBase
             message = "Фото удалено"
         });
     }
+
 }
