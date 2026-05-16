@@ -12,44 +12,54 @@ public class AccessService
         _context = context;
     }
 
-    public async Task<bool> CanViewFolder(int userId, int folderId)
+    public async Task<string> GetFolderAccessLevel(int userId, int folderId)
     {
         var folder = await _context.Folders
             .FirstOrDefaultAsync(f => f.Id == folderId);
 
         if (folder == null)
         {
-            return false;
+            return "none";
         }
 
         if (folder.OwnerId == userId)
         {
-            return true;
+            return "owner";
         }
 
-        return await _context.FolderAccesses.AnyAsync(a =>
-            a.FolderId == folderId &&
-            a.UserId == userId);
+        var directAccess = await _context.FolderAccesses
+            .FirstOrDefaultAsync(a =>
+                a.FolderId == folderId &&
+                a.UserId == userId);
+
+        if (directAccess != null)
+        {
+            return directAccess.AccessType;
+        }
+
+        if (folder.ParentFolderId != null)
+        {
+            return await GetFolderAccessLevel(userId, folder.ParentFolderId.Value);
+        }
+
+        return "none";
+    }
+
+    public async Task<bool> CanViewFolder(int userId, int folderId)
+    {
+        var access = await GetFolderAccessLevel(userId, folderId);
+        return access == "owner" || access == "editor" || access == "viewer";
     }
 
     public async Task<bool> CanEditFolder(int userId, int folderId)
     {
-        var folder = await _context.Folders
-            .FirstOrDefaultAsync(f => f.Id == folderId);
+        var access = await GetFolderAccessLevel(userId, folderId);
+        return access == "owner" || access == "editor";
+    }
 
-        if (folder == null)
-        {
-            return false;
-        }
-
-        if (folder.OwnerId == userId)
-        {
-            return true;
-        }
-
-        return await _context.FolderAccesses.AnyAsync(a =>
-            a.FolderId == folderId &&
-            a.UserId == userId &&
-            a.AccessType == "editor");
+    public async Task<bool> IsOwner(int userId, int folderId)
+    {
+        var access = await GetFolderAccessLevel(userId, folderId);
+        return access == "owner";
     }
 }

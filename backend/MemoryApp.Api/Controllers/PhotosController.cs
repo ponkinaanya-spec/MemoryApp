@@ -4,6 +4,7 @@ using MemoryApp.Api.Data;
 using MemoryApp.Api.Models;
 using MemoryApp.Api.Dtos;
 using MemoryApp.Api.Services;
+using MemoryApp.Api.Dtos;
 
 namespace MemoryApp.Api.Controllers;
 
@@ -197,6 +198,30 @@ public class PhotosController : ControllerBase
         }
 
         return Ok(photo);
+    }
+
+    [HttpPut("{photoId}/note")]
+    public async Task<IActionResult> UpdatePhotoNote(
+        int photoId,
+        UpdatePhotoNoteDto dto)
+    {
+        var photo = await _context.Photos.FindAsync(photoId);
+
+        if (photo == null)
+        {
+            return NotFound("Фото не найдено.");
+        }
+
+        photo.Note = dto.Note;
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new
+        {
+            message = "Заметка обновлена",
+            photo.Id,
+            photo.Note
+        });
     }
 
     [HttpDelete("{photoId}")]

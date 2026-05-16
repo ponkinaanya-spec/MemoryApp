@@ -15,6 +15,7 @@ public class AppDbContext : DbContext
     public DbSet<Photo> Photos => Set<Photo>();
     public DbSet<PhotoFolder> PhotoFolders => Set<PhotoFolder>();
     public DbSet<FolderAccess> FolderAccesses => Set<FolderAccess>();
+    public DbSet<Friendship> Friendships => Set<Friendship>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -34,5 +35,16 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<User>()
             .HasIndex(u => u.Email)
             .IsUnique();
+        modelBuilder.Entity<Friendship>()
+            .HasOne(f => f.User)
+            .WithMany()
+            .HasForeignKey(f => f.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Friendship>()
+            .HasOne(f => f.Friend)
+            .WithMany()
+            .HasForeignKey(f => f.FriendId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }   
