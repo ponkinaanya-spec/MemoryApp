@@ -92,7 +92,7 @@ export default function ProfileScreen() {
             <Text style={styles.username}>{username}</Text>
 
             <TouchableOpacity>
-              <Text style={styles.nameEdit}>✎</Text>
+              <Text style={styles.nameEdit}>✎</Text>   
             </TouchableOpacity>
           </View>
 
