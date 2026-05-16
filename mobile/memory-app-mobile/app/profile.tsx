@@ -1,5 +1,9 @@
-import { useEffect, useState } from "react";
-import { useLocalSearchParams, router } from "expo-router";
+import { useEffect, useState, useCallback } from "react";
+import {
+  useLocalSearchParams,
+  router,
+  useFocusEffect,
+} from "expo-router";
 import {
   View,
   Text,
@@ -7,9 +11,12 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  TextInput,
+  Alert
 } from "react-native";
 
 import { api } from "../src/services/api";
+import * as ImagePicker from "expo-image-picker";
 
 type PhotoItem = {
   id: number;
@@ -23,14 +30,38 @@ export default function ProfileScreen() {
 
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
 
-  const loadPhotos = async () => {
-    const response = await api.get(`/Photos/user/${userId}`);
-    setPhotos(response.data);
-  };
+  const [currentUsername, setCurrentUsername] = useState(
+    String(username || "")
+    );
 
-  useEffect(() => {
-    loadPhotos();
-  }, []);
+    const [avatarUrl, setAvatarUrl] = useState<string | null>(
+    null
+    );
+
+    const [isEditingName, setIsEditingName] = useState(false);
+    const [editedUsername, setEditedUsername] = useState("");   
+
+    const loadProfile = async () => {
+    const userResponse = await api.get(`/Users/${userId}`);
+
+    setCurrentUsername(userResponse.data.username);
+    setEditedUsername(userResponse.data.username);
+    setAvatarUrl(userResponse.data.avatarUrl);
+
+    const photosResponse = await api.get(`/Photos/user/${userId}`);
+
+    setPhotos(photosResponse.data);
+    };
+
+    useEffect(() => {
+        loadProfile();
+    }, []);
+
+    useFocusEffect(
+        useCallback(() => {
+            loadProfile();
+        }, [userId])
+    );
 
   const formatDateTitle = (dateString: string) => {
     const date = new Date(dateString);
@@ -60,6 +91,75 @@ export default function ProfileScreen() {
     router.replace("/");
   };
 
+    const saveUsername = async () => {
+    if (!editedUsername.trim()) {
+        Alert.alert("Ошибка", "Имя не может быть пустым");
+        return;
+    }
+
+    await api.put(`/Users/${userId}`, {
+        username: editedUsername,
+    });
+
+    setCurrentUsername(editedUsername);
+    setIsEditingName(false);
+    };
+
+    const changeAvatar = async () => {
+    const result =
+        await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        quality: 0.8,
+        });
+
+    if (result.canceled) {
+        return;
+    }
+
+    const image = result.assets[0];
+
+    const formData = new FormData();
+
+    formData.append("file", {
+        uri: image.uri,
+        name: "avatar.jpg",
+        type: "image/jpeg",
+    } as any);
+
+    await api.post(
+        `/Users/${userId}/avatar`,
+        formData,
+        {
+        headers: {
+            "Content-Type": "multipart/form-data",
+        },
+        }
+    );
+
+    loadProfile();
+    };
+
+    const deleteProfile = async () => {
+        Alert.alert(
+            "Удалить профиль?",
+            "Будут удалены аккаунт, папки и фотографии пользователя.",
+            [
+            {
+                text: "Отмена",
+                style: "cancel",
+            },
+            {
+                text: "Удалить",
+                style: "destructive",
+                onPress: async () => {
+                await api.delete(`/Users/${userId}`);
+                router.replace("/");
+                },
+            },
+            ]
+        );
+        };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -76,29 +176,64 @@ export default function ProfileScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.profileBlock}>
-          <TouchableOpacity style={styles.avatarWrapper}>
+          <TouchableOpacity
+            style={styles.avatarWrapper}
+            onPress={changeAvatar}
+            >
+            {avatarUrl ? (
+            <Image
+                source={{
+                uri: `http://192.168.1.10:5158${avatarUrl}`,
+                }}
+                style={styles.avatar}
+            />
+            ) : (
             <View style={styles.avatar}>
-              <Text style={styles.avatarText}>
-                {String(username || "A")[0]}
-              </Text>
+                <Text style={styles.avatarText}>
+                {String(currentUsername || "A")[0]}
+                </Text>
             </View>
+            )}
 
             <View style={styles.avatarEdit}>
               <Text style={styles.editIcon}>✎</Text>
             </View>
           </TouchableOpacity>
 
-          <View style={styles.nameRow}>
-            <Text style={styles.username}>{username}</Text>
+            <View style={styles.nameRow}>
+            {isEditingName ? (
+                <TextInput
+                style={styles.nameInput}
+                value={editedUsername}
+                onChangeText={setEditedUsername}
+                autoFocus
+                />
+            ) : (
+                <Text style={styles.username}>
+                {currentUsername}
+                </Text>
+            )}
 
-            <TouchableOpacity>
-              <Text style={styles.nameEdit}>✎</Text>   
+            <TouchableOpacity
+                onPress={() =>
+                isEditingName ? saveUsername() : setIsEditingName(true)
+                }
+            >
+                <Text style={styles.nameEdit}>
+                {isEditingName ? "✓" : "✎"}
+                </Text>
             </TouchableOpacity>
-          </View>
+            </View> 
 
           <TouchableOpacity onPress={() => router.push(`/friends?userId=${userId}`)}>
             <Text style={styles.friendsLink}>Список друзей</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity onPress={deleteProfile}>
+            <Text style={styles.deleteProfile}>
+                Удалить профиль
+            </Text>
+            </TouchableOpacity>
         </View>
 
         <Text style={styles.sectionTitle}>Мои фотографии</Text>
@@ -294,4 +429,22 @@ const styles = StyleSheet.create({
     color: "#9B9B9B",
     fontSize: 16,
   },
+
+  nameInput: {
+    backgroundColor: "#EFEFEF",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#2E2E2E",
+    minWidth: 140,
+    },
+
+    deleteProfile: {
+        marginTop: 12,
+        color: "#9A3F6B",
+        fontSize: 14,
+        fontWeight: "700",
+        },
 });
