@@ -12,6 +12,7 @@ namespace MemoryApp.Api.Controllers;
 public class PhotosController : ControllerBase
 {
     private readonly AppDbContext _context;
+    // private readonly MinioService _minioService;
     private readonly IWebHostEnvironment _environment;
     private readonly AccessService _accessService;
 
@@ -19,10 +20,12 @@ public class PhotosController : ControllerBase
         AppDbContext context,
         IWebHostEnvironment environment,
         AccessService accessService)
+        // MinioService minioService)
     {
         _context = context;
         _environment = environment;
         _accessService = accessService;
+        // _minioService = minioService;
     }
 
     [HttpPost("upload")]

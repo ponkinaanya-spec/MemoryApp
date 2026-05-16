@@ -17,6 +17,7 @@ import {
 
 import { api } from "../src/services/api";
 import * as ImagePicker from "expo-image-picker";
+import AsyncStorage from "@react-native-async-storage/async-storage"; 
 
 type PhotoItem = {
   id: number;
@@ -92,7 +93,10 @@ export default function ProfileScreen() {
     {}
   );
 
-  const logout = () => {
+  const logout = async () => {
+    await AsyncStorage.removeItem("userId");
+    await AsyncStorage.removeItem("username");
+
     router.replace("/");
   };
 

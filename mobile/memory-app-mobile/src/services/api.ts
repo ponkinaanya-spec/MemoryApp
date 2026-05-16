@@ -1,5 +1,5 @@
 import axios from "axios";
 
 export const api = axios.create({
-  baseURL: "https://logos-page-palestinian-entire.trycloudflare.com/api"
+  baseURL: "http://192.168.1.10:5158/api"
 });
