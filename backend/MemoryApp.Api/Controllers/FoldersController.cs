@@ -112,16 +112,6 @@ public class FoldersController : ControllerBase
             return NotFound("Папка не найдена.");
         }
 
-        var canEdit = await _accessService.CanEditFolder(
-            folder.OwnerId,
-            folderId
-        );
-
-        if (!canEdit)
-        {
-            return StatusCode(403, "Нет прав на редактирование папки.");
-        }
-
         return Ok(folder);
     }
 
@@ -188,13 +178,23 @@ public class FoldersController : ControllerBase
     }
 
     [HttpPut("{folderId}")]
-    public async Task<IActionResult> RenameFolder(int folderId, UpdateFolderDto dto)
+    public async Task<IActionResult> RenameFolder(
+        int folderId,
+        [FromQuery] int userId,
+        UpdateFolderDto dto)
     {
         var folder = await _context.Folders.FindAsync(folderId);
 
         if (folder == null)
         {
             return NotFound("Папка не найдена.");
+        }
+
+        var canEdit = await _accessService.CanEditFolder(userId, folderId);
+
+        if (!canEdit)
+        {
+            return StatusCode(403, "Нет прав на редактирование папки.");
         }
 
         if (string.IsNullOrWhiteSpace(dto.Name))
