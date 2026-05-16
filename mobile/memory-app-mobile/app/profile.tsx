@@ -32,6 +32,34 @@ export default function ProfileScreen() {
     loadPhotos();
   }, []);
 
+  const formatDateTitle = (dateString: string) => {
+    const date = new Date(dateString);
+
+    return date.toLocaleDateString("ru-RU", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  const groupedPhotos = photos.reduce(
+    (groups: Record<string, PhotoItem[]>, photo) => {
+      const dateTitle = formatDateTitle(photo.uploadedAt);
+
+      if (!groups[dateTitle]) {
+        groups[dateTitle] = [];
+      }
+
+      groups[dateTitle].push(photo);
+      return groups;
+    },
+    {}
+  );
+
+  const logout = () => {
+    router.replace("/");
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -41,39 +69,62 @@ export default function ProfileScreen() {
 
         <Text style={styles.headerTitle}>Профиль</Text>
 
-        <View style={{ width: 70 }} />
+        <TouchableOpacity onPress={logout}>
+          <Text style={styles.logout}>Выйти</Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.profileBlock}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {String(username || "A")[0]}
-            </Text>
+          <TouchableOpacity style={styles.avatarWrapper}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>
+                {String(username || "A")[0]}
+              </Text>
+            </View>
+
+            <View style={styles.avatarEdit}>
+              <Text style={styles.editIcon}>✎</Text>
+            </View>
+          </TouchableOpacity>
+
+          <View style={styles.nameRow}>
+            <Text style={styles.username}>{username}</Text>
+
+            <TouchableOpacity>
+              <Text style={styles.nameEdit}>✎</Text>
+            </TouchableOpacity>
           </View>
 
-          <Text style={styles.username}>{username}</Text>
-          <Text style={styles.info}>Мои воспоминания</Text>
+          <TouchableOpacity onPress={() => router.push(`/friends?userId=${userId}`)}>
+            <Text style={styles.friendsLink}>Список друзей</Text>
+          </TouchableOpacity>
         </View>
 
         <Text style={styles.sectionTitle}>Мои фотографии</Text>
 
-        <View style={styles.grid}>
-          {photos.map((photo) => (
-            <TouchableOpacity
-              key={photo.id}
-              style={styles.photoCard}
-              onPress={() => router.push(`/photo?photoId=${photo.id}`)}
-            >
-              <Image
-                source={{
-                  uri: `http://192.168.1.10:5158${photo.fileUrl}`,
-                }}
-                style={styles.photo}
-              />
-            </TouchableOpacity>
-          ))}
-        </View>
+        {Object.entries(groupedPhotos).map(([dateTitle, datePhotos]) => (
+          <View key={dateTitle} style={styles.dateGroup}>
+            <Text style={styles.dateTitle}>{dateTitle}</Text>
+
+            <View style={styles.grid}>
+              {datePhotos.map((photo) => (
+                <TouchableOpacity
+                  key={photo.id}
+                  style={styles.photoCard}
+                  onPress={() => router.push(`/photo?photoId=${photo.id}`)}
+                >
+                  <Image
+                    source={{
+                      uri: `http://192.168.1.10:5158${photo.fileUrl}`,
+                    }}
+                    style={styles.photo}
+                  />
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        ))}
 
         {photos.length === 0 && (
           <Text style={styles.emptyText}>Фотографий пока нет</Text>
@@ -111,6 +162,14 @@ const styles = StyleSheet.create({
     color: "#2E2E2E",
   },
 
+  logout: {
+    color: "#9A6BCB",
+    fontSize: 15,
+    fontWeight: "700",
+    width: 70,
+    textAlign: "right",
+  },
+
   profileBlock: {
     alignItems: "center",
     backgroundColor: "#FFFFFF",
@@ -127,6 +186,11 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
 
+  avatarWrapper: {
+    position: "relative",
+    marginBottom: 14,
+  },
+
   avatar: {
     width: 92,
     height: 92,
@@ -134,7 +198,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#9A6BCB",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 14,
   },
 
   avatarText: {
@@ -143,16 +206,49 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 
+  avatarEdit: {
+    position: "absolute",
+    right: 0,
+    bottom: 0,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "#9A6BCB",
+  },
+
+  editIcon: {
+    color: "#9A6BCB",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+
   username: {
     fontSize: 24,
     fontWeight: "700",
     color: "#2E2E2E",
   },
 
-  info: {
-    marginTop: 6,
-    color: "#9B9B9B",
+  nameEdit: {
+    color: "#9A6BCB",
+    fontSize: 18,
+    fontWeight: "700",
+  },
+
+  friendsLink: {
+    marginTop: 10,
+    color: "#9A6BCB",
     fontSize: 15,
+    fontWeight: "700",
   },
 
   sectionTitle: {
@@ -160,6 +256,17 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#2E2E2E",
     marginBottom: 12,
+  },
+
+  dateGroup: {
+    marginBottom: 18,
+  },
+
+  dateTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#2E2E2E",
+    marginBottom: 10,
   },
 
   grid: {
