@@ -72,11 +72,16 @@ export default function HomeScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.logo}>Memory</Text>
-        <View style={styles.profileCircle}>
-          <Text style={styles.profileLetter}>
-            {String(username || "A")[0]}
-          </Text>
-        </View>
+            <TouchableOpacity
+            style={styles.profileCircle}
+            onPress={() =>
+                router.push(`/profile?userId=${userId}&username=${username}`)
+            }
+            >
+            <Text style={styles.profileLetter}>
+                {String(username || "A")[0]}
+            </Text>
+            </TouchableOpacity>
       </View>
 
       <TextInput
