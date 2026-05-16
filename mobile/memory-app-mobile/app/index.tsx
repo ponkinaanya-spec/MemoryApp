@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { router } from "expo-router";
 import { api } from "../src/services/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   View,
   Text,
@@ -14,6 +15,24 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const checkAuth = async () => {
+    const savedUserId =
+      await AsyncStorage.getItem("userId");
+
+    const savedUsername =
+      await AsyncStorage.getItem("username");
+
+    if (savedUserId && savedUsername) {
+      router.replace(
+        `/home?userId=${savedUserId}&username=${savedUsername}`
+      );
+    }
+  };
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
 const handleLogin = async () => {
   try {
     const response = await api.post("/Auth/login", {
@@ -21,7 +40,17 @@ const handleLogin = async () => {
       password,
     });
 
-    router.push(
+    await AsyncStorage.setItem(
+      "userId",
+      String(response.data.id)
+    );
+
+    await AsyncStorage.setItem(
+      "username",
+      response.data.username
+    );
+
+    router.replace(
       `/home?userId=${response.data.id}&username=${response.data.username}`
     );
   } catch (error: any) {
