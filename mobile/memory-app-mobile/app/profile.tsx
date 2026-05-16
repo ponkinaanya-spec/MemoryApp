@@ -38,6 +38,8 @@ export default function ProfileScreen() {
     null
     );
 
+    const [requestsCount, setRequestsCount] = useState(0);
+
     const [isEditingName, setIsEditingName] = useState(false);
     const [editedUsername, setEditedUsername] = useState("");   
 
@@ -51,6 +53,9 @@ export default function ProfileScreen() {
     const photosResponse = await api.get(`/Photos/user/${userId}`);
 
     setPhotos(photosResponse.data);
+
+    const requestsResponse = await api.get(`/Friends/requests/${userId}`);
+    setRequestsCount(requestsResponse.data.length);
     };
 
     useEffect(() => {
@@ -228,6 +233,14 @@ export default function ProfileScreen() {
           <TouchableOpacity onPress={() => router.push(`/friends?userId=${userId}`)}>
             <Text style={styles.friendsLink}>Список друзей</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+                onPress={() => router.push(`/friend-requests?userId=${userId}`)}
+                >
+                <Text style={styles.requestsLink}>
+                Заявки в друзья{requestsCount > 0 ? ` (${requestsCount})` : ""}
+                </Text>
+                </TouchableOpacity>
 
           <TouchableOpacity onPress={deleteProfile}>
             <Text style={styles.deleteProfile}>
@@ -446,5 +459,12 @@ const styles = StyleSheet.create({
         color: "#9A3F6B",
         fontSize: 14,
         fontWeight: "700",
-        },
+    },
+
+    requestsLink: {
+        marginTop: 8,
+        color: "#9A6BCB",
+        fontSize: 15,
+        fontWeight: "700",
+    },
 });

@@ -1,52 +1,47 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocalSearchParams, router } from "expo-router";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  TextInput,
   ScrollView,
   Image,
 } from "react-native";
 
 import { api } from "../src/services/api";
 
-type UserItem = {
+type RequestItem = {
   id: number;
+  senderId: number;
   username: string;
   email: string;
   avatarUrl?: string | null;
 };
 
-export default function SearchUsersScreen() {
+export default function FriendRequestsScreen() {
   const { userId } = useLocalSearchParams();
 
-  const [search, setSearch] = useState("");
-  const [users, setUsers] = useState<UserItem[]>([]);
+  const [requests, setRequests] = useState<RequestItem[]>([]);
 
-  const searchUsers = async (value: string) => {
-    setSearch(value);
-
-    if (!value.trim()) {
-      setUsers([]);
-      return;
-    }
-
-    const response = await api.get(
-      `/Users/search?query=${value}`
-    );
-
-    setUsers(response.data);
+  const loadRequests = async () => {
+    const response = await api.get(`/Friends/requests/${userId}`);
+    setRequests(response.data);
   };
 
-    const addFriend = async (friendId: number) => {
-    await api.post(
-        `/Friends/request?senderId=${userId}&receiverId=${friendId}`
-    );
+  useEffect(() => {
+    loadRequests();
+  }, []);
 
-    router.back();
-    };
+  const acceptRequest = async (requestId: number) => {
+    await api.post(`/Friends/accept?requestId=${requestId}`);
+    loadRequests();
+  };
+
+  const declineRequest = async (requestId: number) => {
+    await api.delete(`/Friends/decline?requestId=${requestId}`);
+    loadRequests();
+  };
 
   return (
     <View style={styles.container}>
@@ -55,69 +50,56 @@ export default function SearchUsersScreen() {
           <Text style={styles.back}>‹ Назад</Text>
         </TouchableOpacity>
 
-        <Text style={styles.title}>Поиск</Text>
+        <Text style={styles.title}>Заявки</Text>
 
         <View style={{ width: 70 }} />
       </View>
 
-      <TextInput
-        style={styles.search}
-        placeholder="Имя или почта"
-        placeholderTextColor="#9B9B9B"
-        value={search}
-        onChangeText={searchUsers}
-      />
-
       <ScrollView showsVerticalScrollIndicator={false}>
-        {users.map((user) => (
-          <View key={user.id} style={styles.userCard}>
-            <TouchableOpacity
-              style={styles.left}
-              onPress={() =>
-                router.push(
-                  `/user-profile?userId=${user.id}&viewerId=${userId}`
-                )
-              }
-            >
-              {user.avatarUrl ? (
+        {requests.map((request) => (
+          <View key={request.id} style={styles.card}>
+            <View style={styles.left}>
+              {request.avatarUrl ? (
                 <Image
                   source={{
-                    uri: `http://192.168.1.10:5158${user.avatarUrl}`,
+                    uri: `http://192.168.1.10:5158${request.avatarUrl}`,
                   }}
                   style={styles.avatarImage}
                 />
               ) : (
                 <View style={styles.avatar}>
                   <Text style={styles.avatarText}>
-                    {user.username[0]}
+                    {request.username[0]}
                   </Text>
                 </View>
               )}
 
               <View>
-                <Text style={styles.username}>
-                  {user.username}
-                </Text>
-
-                <Text style={styles.email}>
-                  {user.email}
-                </Text>
+                <Text style={styles.username}>{request.username}</Text>
+                <Text style={styles.email}>{request.email}</Text>
               </View>
-            </TouchableOpacity>
+            </View>
 
-            <TouchableOpacity
-              style={styles.addButton}
-              onPress={() => addFriend(user.id)}
-            >
-              <Text style={styles.addText}>+</Text>
-            </TouchableOpacity>
+            <View style={styles.buttons}>
+              <TouchableOpacity
+                style={styles.accept}
+                onPress={() => acceptRequest(request.id)}
+              >
+                <Text style={styles.buttonText}>✓</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.decline}
+                onPress={() => declineRequest(request.id)}
+              >
+                <Text style={styles.buttonText}>×</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         ))}
 
-        {search.length > 0 && users.length === 0 && (
-          <Text style={styles.empty}>
-            Пользователи не найдены
-          </Text>
+        {requests.length === 0 && (
+          <Text style={styles.empty}>Заявок пока нет</Text>
         )}
       </ScrollView>
     </View>
@@ -152,21 +134,11 @@ const styles = StyleSheet.create({
     color: "#2E2E2E",
   },
 
-  search: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 15,
-    marginBottom: 18,
-  },
-
-  userCard: {
+  card: {
     backgroundColor: "#FFFFFF",
     borderRadius: 22,
     padding: 14,
     marginBottom: 12,
-
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -213,20 +185,33 @@ const styles = StyleSheet.create({
     color: "#9B9B9B",
   },
 
-  addButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+  buttons: {
+    flexDirection: "row",
+    gap: 8,
+  },
+
+  accept: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: "#9A6BCB",
     alignItems: "center",
     justifyContent: "center",
   },
 
-  addText: {
+  decline: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#D7C2EA",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  buttonText: {
     color: "#FFFFFF",
-    fontSize: 26,
+    fontSize: 20,
     fontWeight: "700",
-    marginTop: -2,
   },
 
   empty: {

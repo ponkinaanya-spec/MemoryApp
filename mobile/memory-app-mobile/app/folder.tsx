@@ -93,8 +93,8 @@ export default function FolderScreen() {
         return;
     }
 
-    await api.put(`/Folders/${folderId}`, {
-        name: editedFolderName,
+    await api.put(`/Folders/${folderId}?userId=${userId}`, {
+    name: editedFolderName,
     });
 
     setFolderName(editedFolderName);
